@@ -1,0 +1,14 @@
+1-git status
+2-git add --all 
+3-git commit -m "message"
+1-git remote add origin <url>
+2-git push -u origin master
+=======================================
+problem:
+============
+fatal: The current branch master has no upstream branch.
+To push the current branch and set the remote as upstream, use
+
+    git push --set-upstream origin master
+
+solution: git push -u origin head 
