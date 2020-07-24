@@ -1,0 +1,13 @@
+.\objects\rgb.o: hal\rgb.c
+.\objects\rgb.o: hal\rgb.h
+.\objects\rgb.o: .\mcal\tm4c123io.h
+.\objects\rgb.o: .\lib\stdint.h
+.\objects\rgb.o: .\lib\bit.h
+.\objects\rgb.o: .\mcal\TM4C123GH6PM.H
+.\objects\rgb.o: C:\Keil_v5\ARM\PACK\ARM\CMSIS\5.4.0\CMSIS\Core\Include\core_cm4.h
+.\objects\rgb.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdint.h
+.\objects\rgb.o: C:\Keil_v5\ARM\PACK\ARM\CMSIS\5.4.0\CMSIS\Core\Include\cmsis_version.h
+.\objects\rgb.o: C:\Keil_v5\ARM\PACK\ARM\CMSIS\5.4.0\CMSIS\Core\Include\cmsis_compiler.h
+.\objects\rgb.o: C:\Keil_v5\ARM\PACK\ARM\CMSIS\5.4.0\CMSIS\Core\Include\cmsis_armcc.h
+.\objects\rgb.o: C:\Keil_v5\ARM\PACK\ARM\CMSIS\5.4.0\CMSIS\Core\Include\mpu_armv7.h
+.\objects\rgb.o: C:\Keil_v5\ARM\PACK\Keil\TM4C_DFP\1.1.0\Device\Include\TM4C123\system_TM4C123.h

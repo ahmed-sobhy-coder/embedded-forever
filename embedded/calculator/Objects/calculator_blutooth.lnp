@@ -1,0 +1,27 @@
+--cpu=Cortex-M4.fp
+".\objects\source.o"
+".\objects\lcdapps.o"
+".\objects\calc.o"
+".\objects\array.o"
+".\objects\math.o"
+".\objects\strfuncs.o"
+".\objects\keypad.o"
+".\objects\lcd.o"
+".\objects\rgb.o"
+".\objects\switch.o"
+".\objects\gsm.o"
+".\objects\bluetooth.o"
+".\objects\clock.o"
+".\objects\nvic.o"
+".\objects\pwm.o"
+".\objects\ssi.o"
+".\objects\systick.o"
+".\objects\tm4c123io.o"
+".\objects\twi.o"
+".\objects\uart.o"
+".\objects\startup_tm4c123.o"
+".\objects\system_tm4c123.o"
+--strict --scatter ".\Objects\calculator_blutooth.sct"
+--summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols
+--info sizes --info totals --info unused --info veneers
+--list ".\Listings\calculator_blutooth.map" -o .\Objects\calculator_blutooth.axf

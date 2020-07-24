@@ -1,0 +1,179 @@
+#include "app.h"
+#include "bluetooth.h"
+#include "calc.h"
+uint32_t sysclock;
+UART_INIT_TYPE huart0;
+UART_INIT_TYPE huart2;
+extern ERROR_TYPE ER;
+extern uint8_t hex;
+extern uint8_t bin;
+extern uint8_t ascii;
+extern uint8_t clr;
+int main(void)
+{
+    PLL_init(CLK_40MHZ);
+    sysclock = 40000000;
+#if (LCD_4BIT_INTERFACE == 1)
+    GPIO_PortInit(LCD_PORT, OUTPUT); //initialize portB as output
+#else
+    GPIO_PortInit(LCD_DATA_PORT, OUTPUT); //initialize portB as output
+    GPIO_PinInit(LCD_CONTROL_PORT, LCD_REGISTER_SELECT, OUTPUT);
+    GPIO_PinInit(LCD_CONTROL_PORT, LCD_RW, OUTPUT);
+    GPIO_PinInit(LCD_CONTROL_PORT, LCD_ENABLE, OUTPUT);
+    LCD_4BIT_INTERFACE == 1
+#endif
+        RGB_Init(ALL);
+    LCD_Init();
+    huart0.BAUD_RATE = 9600; //baud rate
+    huart0.CHAR_LEN = 8; //int8_tlength
+    huart0.NSTOP_BIT = 1; //number of stop bits
+    huart0.PARITY_BIT = 0; //parity is diabled
+    huart0.TYPE = BOTH; //activate both RX & TX
+
+    huart2.BAUD_RATE = 9600; //baud rate
+    huart2.CHAR_LEN = 8; //int8_tlength
+    huart2.NSTOP_BIT = 1; //number of stop bits
+    huart2.PARITY_BIT = 0; //parity is diabled
+    huart2.TYPE = BOTH; //activate both RX & TX
+
+    Uart_Init(UT0, &huart0); //initalize uart 0
+    Uart_Init(UT2, &huart2); //initialize uart2    
+    HC05_init(DATA_MODE); //initialize bluetooth
+
+    Uart_SendStrRcNl(UT0, "\n calcualtor ready..."); //print that TIVA is ready
+    LCD_SendStrMid(LINE1, "Embedded Systems");  //send to LCD embedded systems in the middle of first line
+    LCD_SendStrMid(LINE2, "CALCULATOR");  //send to LCD CALCULATOR in the middle of second line
+    printBluetooth("EMBEDDED SYSTEM CALCULATOR is ready");   //send this message to master device
+    RGB_Out(LED_RED, HIGH); //by tiva s ready for new expression
+
+    double result;
+    int8_t str[20];
+    int8_t chstr[2];
+    while (1)   //loop forever
+    {
+        RGB_DisAll();    //disable all leds
+        RGB_Out(LED_RED, HIGH); //light red to indicate that it is the time to input new expression
+        getBluetooth(str, 20); //get expression from bluetooth
+        LCD_Clr(); //clear lcd to print the expression
+        RGB_Out(LED_GREEN, HIGH);//light green means it is the time for processing expression 
+        LCD_SendStrXY(COLUMN1, LINE1, str); //print the input expression to lcd
+        printTerm(str); //print the input expression to terminal
+        result = calculator(str);  //get the result of expression
+        if (clear == 0)
+        {
+            if (ER == NO_ERROR)   //if there is no error 
+            {
+                if (isFloat(result) == 1)      //check if the number is float or integer
+                {
+                    if (hex == 1)//check is the user wants to display the result in hexa
+                    {
+                        printTerm(convDoubleToHexStr(result, 4)); //send to termianl the result   
+                        printBluetooth(convDoubleToHexStr(result, 4)); //send to bluetooth the result
+                        LCD_SendStrXY(COLUMN1, LINE2, convDoubleToHexStr(result, 4)); //send to LCD the the result
+                        hex = 0;  //reset flag to indicate that the result is printed in hexa 
+                    }
+                    else if (bin == 1)  //check is the user wants to display the result in binary
+                    {
+                        printTerm(convDoubleToBinStr(result, 4));  //send to termianl the result  
+                        printBluetooth(convDoubleToBinStr(result, 4));  //send to bluetooth the result
+                        LCD_SendStrXY(COLUMN1, LINE2, convDoubleToBinStr(result, 4));  //send to LCD the the result
+
+                    }
+                    else        //print the result in decimal
+                    {
+                        printTerm(floatToStr(result, 4));  //send to termianl the result  
+                        printBluetooth(floatToStr(result, 4));  //send to bluetooth the result
+                        LCD_SendStrXY(COLUMN1, LINE2, floatToStr(result, 4)); //send to LCD the the result
+                    }
+                }
+
+                else  //the result is integer
+                {
+                    if (hex == 1)   //check is the user wants to display the result in hexa
+                    {
+                        printTerm(convDoubleToHexStr((int32_t)result, 0)); //send to termianl the result  
+                        printBluetooth(convDoubleToHexStr((int32_t)result, 0)); //send to bluetooth the result
+                        LCD_SendStrXY(COLUMN1, LINE2, convDoubleToHexStr((int32_t)result, 0)); //send to LCD the the result
+
+                        hex = 0;  //reset flag to indicate that the result is printed in hexa 
+                    }
+                    else if (bin == 1) //check is the user wants to display the result in binary
+                    {
+                        printTerm(convDoubleToBinStr((int32_t)result, 0));//send to termianl the result  
+                        printBluetooth(convDoubleToBinStr((int32_t)result, 0));//send to bluetooth the result
+                        LCD_SendStrXY(COLUMN1, LINE2, convDoubleToBinStr((int32_t)result, 0)); //send to LCD the the result
+
+                        bin = 0;  //reset flag to indicate that the result is printed in binary
+                    }
+                    else   //print the result in decimal
+                    {
+                        printTerm(intToStr((int32_t)result)); //send to termianl the result  
+                        printBluetooth(intToStr((int32_t)result));  //send to bluetooth the result
+                        LCD_SendStrXY(COLUMN1, LINE2, intToStr((int32_t)result));  //send to LCD the the result
+                    }
+                }
+            }
+            else if (ER == INVALID_BRACES)// in case the was in braceses 
+            {
+                printTerm("braces error"); //send to termianl the type of error  
+                printBluetooth("braces error");//send to bluetooth the type of error 
+                LCD_SendStrXY(COLUMN1, LINE2, "braces error");   //send to LCD the type of error
+                ER = NO_ERROR; //reset ER flag
+            }
+            else if (ER == INVALID_NO_PREV)// in case the user want to do calculation in the previous result but there is no previous result 
+            {
+                printTerm("no previous result"); //print to terminal the type of error 
+                printBluetooth("no previous result"); //send to bluetooth the type of error
+                LCD_SendStrXY(COLUMN1, LINE2, "no previous result");   //send to LCD the type of error
+                ER = NO_ERROR; //reset ER flag
+            }
+            else if (ER == INVALID_OPER) // in case user inputts invalid opertor 
+            {
+                printTerm("operator error"); //send to termianl the type of error 
+                printBluetooth("operator error"); //send to bluetooth the type of error 
+                LCD_SendStrXY(COLUMN1, LINE2, "operator error");   //send to LCD the type of error
+                ER = NO_ERROR; //reset ER flag
+
+            }
+            else if (ER == INVALID_CHAR) // in case user input is invalid chars like '_'
+            {
+                printTerm("invalid character"); //send to termianl the type of error 
+                printBluetooth("invalid character");//send to bluetooth the type of error
+                LCD_SendStrXY(COLUMN1, LINE2, "invalid character");   //send to LCD the type of error
+                ER = NO_ERROR; //reset ER flag
+
+            }
+            else if (ER == INVALID_CONVERSION) // in case the error was in conversion to binary or hex 
+            {
+                printTerm("invalid conversion");  //send to termianl the type of error 
+                printBluetooth("invalid conversion");  //send to bluetooth the type of error 
+                LCD_SendStrXY(COLUMN1, LINE2, "invalid conversion");   //send to LCD the type of error
+                ER = NO_ERROR; //reset ER flag
+
+            }
+            else if (ER == INVALID_EXPRESSION)  //in case the error was in expression, ivalid opertor combination lik +&
+            {
+                printTerm("invalid input"); //send to termianl the type of error 
+                printBluetooth("invalid input"); //send to bluetooth the type of error
+                LCD_SendStrXY(COLUMN1, LINE2, "invalid input");   //send to LCD the type of error
+
+                ER = NO_ERROR; //reset ER flag
+
+            }
+            else if (ER == INVALID_OPERAND) // in case operator works only with inegers but one of operands are float 
+            {
+                printTerm("invalid operand"); //send to termianl the type of error 
+                printBluetooth("invalid operand"); //send to bluetooth the type of error
+                LCD_SendStrXY(COLUMN1, LINE2, "invalid operand");   //send to LCD the type of error
+
+                ER = NO_ERROR; //reset ER flag
+            }
+
+        }
+		else
+		{
+			clear=0;//reset clear flag
+		}
+        msDelay(500); //delay 0.5 second for led green
+    }
+}
